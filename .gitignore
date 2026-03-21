@@ -1,0 +1,59 @@
+# ============================================================
+# .gitignore – Spartan-6 Synchronous FIFO Project
+# ============================================================
+
+# --- Large binary / zip archives ---
+src/*.zip
+*.zip
+
+# --- Personal files (resume, notes) ---
+*.tex
+*.pdf
+
+# --- ModelSim / QuestaSim simulation artifacts ---
+work/
+transcript
+*.wlf
+*.vcd
+*.ucdb
+vsim.wlf
+*.log
+
+# --- Xilinx ISE build artifacts ---
+*.xise
+*.gise
+isim/
+ise_project/
+_ngo/
+_xmsgs/
+*.ngd
+*.ngc
+*.ncd
+*.pcf
+*.bgn
+*.bld
+*.drc
+*.mrp
+*.map
+*.twr
+*.twx
+*.par
+*.pad
+*.xpi
+*.unrouted
+*.bit
+*.bin
+*.svf
+
+# --- Coverage reports ---
+coverage_report/
+*.html
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.vscode/
+.idea/

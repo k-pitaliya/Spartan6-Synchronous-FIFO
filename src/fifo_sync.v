@@ -6,9 +6,9 @@ parameter ADDR_WIDTH = 4
 input clk,
 input rst_n,
 input wr_en,
-input [DATA_WIDTH-1:0] w_data
+input [DATA_WIDTH-1:0] w_data,
 output full,
-input rd_en
+input rd_en,
 output reg [DATA_WIDTH-1:0] r_data, // CHANGE 1: Make the output a 'reg'
 output empty
 );
