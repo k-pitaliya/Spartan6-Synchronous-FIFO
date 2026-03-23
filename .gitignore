@@ -1,59 +1,68 @@
-# ============================================================
-# .gitignore – Spartan-6 Synchronous FIFO Project
-# ============================================================
-
-# --- Large binary / zip archives ---
-src/*.zip
+# ─── Binary / Archive files (never track these in Git) ─────────────────────
 *.zip
+*.rar
+*.7z
+*.tar.gz
 
-# --- Personal files (resume, notes) ---
-*.tex
-*.pdf
+# ─── Xilinx ISE generated files ─────────────────────────────────────────────
+*.bit          # Bitstream
+*.mcs          # Programming file
+*.ncd          # Netlist
+*.ngc          # NGC netlist
+*.ngd          # Native generic database
+*.pcf          # Physical constraints (generated)
+*.xwbt         # ISE project temp
+*.gise         # ISE GUI state
+*.ise          # ISE project file (binary)
+*.xise         # ISE project (keep .xise only if text-based)
+*.log          # Simulation / synthesis logs
+*.twr          # Timing report
+*.twx          # Timing XML
+*.bgn          # Bitgen log
+*.bld          # Build log
+*.drc          # DRC report
+*.pad          # PAD report
+*.par          # PAR report
+*.ptwx         # Post-translate timing
+*.map          # Map report
+*.mrp          # Map report
+*.xrpt         # XML report
+*.srp          # Synthesis report
+*.syr          # Synthesis report
+*_summary.html # ISE summary HTML
+*_envsettings.html
+xst/           # XST temp directory
+iseconfig/     # ISE config
+xlnx_auto_*/   # Auto-generated ISE directories
 
-# --- ModelSim / QuestaSim simulation artifacts ---
-work/
-transcript
-*.wlf
-*.vcd
-*.ucdb
-vsim.wlf
-*.log
+# ─── Vivado generated files ──────────────────────────────────────────────────
+*.runs/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.sim/
+*.gen/
+*.jou          # Vivado journal
+*.str          # Vivado strategy
+.Xil/          # Vivado temp
 
-# --- Xilinx ISE build artifacts ---
-*.xise
-*.gise
-isim/
-ise_project/
-_ngo/
-_xmsgs/
-*.ngd
-*.ngc
-*.ncd
-*.pcf
-*.bgn
-*.bld
-*.drc
-*.mrp
-*.map
-*.twr
-*.twx
-*.par
-*.pad
-*.xpi
-*.unrouted
-*.bit
-*.bin
-*.svf
+# ─── Simulation outputs ──────────────────────────────────────────────────────
+*.vcd          # Waveform dumps (large — use GTKWave locally)
+*.shm/         # Cadence simulation database
+*.trn          # Cadence transcript
+simv           # VCS compiled binary
+simv.daidir/
+csrc/
+ucli.key
+DVEfiles/
+inter.vpd
 
-# --- Coverage reports ---
-coverage_report/
-*.html
+# ─── Cadence / Xcelium ───────────────────────────────────────────────────────
+INCA_libs/
+waves.shm/
+*.diag
 
-# --- OS / editor ---
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
-.vscode/
-.idea/
+# ─── OS junk ────────────────────────────────────────────────────────────────
+.DS_Store      # Mac
+Thumbs.db      # Windows
+desktop.ini
