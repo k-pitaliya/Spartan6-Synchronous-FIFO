@@ -1,115 +1,96 @@
-// =============================================================================
-// File        : fifo_coverage.sv
-// Project     : Synchronous FIFO UVM Testbench
-// Description : UVM Coverage Collector – functional coverage groups for FIFO
-// Author      : Kushal Pitaliya
-// =============================================================================
+// fifo_coverage.sv  -  Kushal Pitaliya
+// Coverage collector for the FIFO UVM testbench.
+// Three covergroups: operation types, data value boundaries, flag transitions.
 `ifndef FIFO_COVERAGE_SV
 `define FIFO_COVERAGE_SV
 
-class fifo_coverage #(parameter DATA_WIDTH = 8) extends uvm_subscriber #(fifo_seq_item #(DATA_WIDTH));
+import uvm_pkg::*;
+`include "uvm_macros.svh"
+import fifo_pkg::*;
 
-    `uvm_component_param_utils(fifo_coverage #(DATA_WIDTH))
+class fifo_coverage extends uvm_subscriber #(fifo_seq_item);
+    `uvm_component_utils(fifo_coverage)
 
-    fifo_seq_item #(DATA_WIDTH) txn;
+    fifo_seq_item txn;
 
-    // -------------------------------------------------------------------
-    // Covergroup – Operation Types
-    // -------------------------------------------------------------------
-    covergroup cg_operations;
-        cp_op_type: coverpoint txn.op_type {
-            bins write_only = {fifo_seq_item#(DATA_WIDTH)::WRITE_ONLY};
-            bins read_only  = {fifo_seq_item#(DATA_WIDTH)::READ_ONLY};
-            bins read_write = {fifo_seq_item#(DATA_WIDTH)::READ_WRITE};
-            bins idle       = {fifo_seq_item#(DATA_WIDTH)::IDLE};
-        }
-
-        cp_full: coverpoint txn.full {
-            bins full_asserted    = {1'b1};
-            bins full_deasserted  = {1'b0};
-        }
-
-        cp_empty: coverpoint txn.empty {
-            bins empty_asserted   = {1'b1};
-            bins empty_deasserted = {1'b0};
-        }
-
-        // Cross coverage: operation while full/empty
-        cx_op_full:  cross cp_op_type, cp_full;
-        cx_op_empty: cross cp_op_type, cp_empty;
-    endgroup
-
-    // -------------------------------------------------------------------
-    // Covergroup – Data Boundary Coverage
-    // -------------------------------------------------------------------
-    covergroup cg_data_values;
-        cp_wdata_boundaries: coverpoint txn.w_data {
-            bins zero      = {8'h00};
-            bins max_val   = {8'hFF};
-            bins low_range = {[8'h01 : 8'h3F]};
-            bins mid_range = {[8'h40 : 8'hBF]};
-            bins hi_range  = {[8'hC0 : 8'hFE]};
-        }
-    endgroup
-
-    // -------------------------------------------------------------------
-    // Covergroup – Flag Transitions
-    // -------------------------------------------------------------------
-    // Track consecutive flag changes (fill, drain edge detection)
+    // track previous flag values for transition detection
     logic prev_full  = 0;
-    logic prev_empty = 1;
+    logic prev_empty = 1;  // starts empty after reset
 
-    covergroup cg_flag_transitions;
-        cp_full_rise:  coverpoint (prev_full  == 0 && txn.full  == 1) { bins full_rise  = {1}; }
-        cp_full_fall:  coverpoint (prev_full  == 1 && txn.full  == 0) { bins full_fall  = {1}; }
-        cp_empty_rise: coverpoint (prev_empty == 0 && txn.empty == 1) { bins empty_rise = {1}; }
-        cp_empty_fall: coverpoint (prev_empty == 1 && txn.empty == 0) { bins empty_fall = {1}; }
+    // covergroup 1: what operations happened and under what flag conditions
+    covergroup cg_ops;
+        option.per_instance = 1;  // Enable per-instance coverage for regression merging
+        cp_op: coverpoint txn.op_type {
+            bins write_only = {fifo_seq_item::WRITE_ONLY};
+            bins read_only  = {fifo_seq_item::READ_ONLY};
+            bins read_write = {fifo_seq_item::READ_WRITE};   // simultaneous - important case
+            bins idle       = {fifo_seq_item::IDLE};
+        }
+        cp_full:  coverpoint txn.full  { bins is_full  = {1}; bins not_full  = {0}; }
+        cp_empty: coverpoint txn.empty { bins is_empty = {1}; bins not_empty = {0}; }
+
+        // cross: write while full? read while empty? these are the boundary cases
+        cx_op_full:  cross cp_op, cp_full;
+        cx_op_empty: cross cp_op, cp_empty;
     endgroup
 
-    // -------------------------------------------------------------------
-    // Constructor
-    // -------------------------------------------------------------------
+    // covergroup 2: make sure we hit data boundaries dynamically based on DATA_WIDTH
+    covergroup cg_data;
+        cp_wdata: coverpoint txn.w_data {
+            bins zero      = {0};
+            bins max_val   = { (1<<fifo_pkg::DATA_WIDTH)-1 };
+            bins others[3] = { [1 : (1<<fifo_pkg::DATA_WIDTH)-2] };
+        }
+        cp_rdata: coverpoint txn.r_data {
+            bins zero      = {0};
+            bins max_val   = { (1<<fifo_pkg::DATA_WIDTH)-1 };
+            bins others[3] = { [1 : (1<<fifo_pkg::DATA_WIDTH)-2] };
+        }
+    endgroup
+
+    // covergroup 3: did the full/empty flags actually toggle?
+    // want to see FIFO go from not-full to full, and back down
+    covergroup cg_flags;
+        cp_full_rise:  coverpoint (prev_full  == 0 && txn.full  == 1) { bins v = {1}; }
+        cp_full_fall:  coverpoint (prev_full  == 1 && txn.full  == 0) { bins v = {1}; }
+        cp_empty_rise: coverpoint (prev_empty == 0 && txn.empty == 1) { bins v = {1}; }
+        cp_empty_fall: coverpoint (prev_empty == 1 && txn.empty == 0) { bins v = {1}; }
+    endgroup
+
     function new(string name = "fifo_coverage", uvm_component parent = null);
         super.new(name, parent);
-        cg_operations       = new();
-        cg_data_values      = new();
-        cg_flag_transitions = new();
+        cg_ops   = new();
+        cg_data  = new();
+        cg_flags = new();
     endfunction
 
-    // -------------------------------------------------------------------
-    // write() – called every time monitor sends a transaction
-    // -------------------------------------------------------------------
-    function void write(fifo_seq_item #(DATA_WIDTH) t);
+    // called by analysis port every cycle
+    function void write(fifo_seq_item t);
         txn = t;
-        cg_operations.sample();
-        cg_data_values.sample();
-        cg_flag_transitions.sample();
+        cg_ops.sample();
+        cg_data.sample();
+        cg_flags.sample();
         prev_full  = txn.full;
         prev_empty = txn.empty;
     endfunction
 
-    // -------------------------------------------------------------------
-    // Report Phase – Print Coverage Results
-    // -------------------------------------------------------------------
     function void report_phase(uvm_phase phase);
+        real ops_cov, data_cov, flag_cov, total_cov;
+        ops_cov   = cg_ops.get_coverage();
+        data_cov  = cg_data.get_coverage();
+        flag_cov  = cg_flags.get_coverage();
+        total_cov = (ops_cov + data_cov + flag_cov) / 3.0;
+
         `uvm_info("COVERAGE", "============================================", UVM_NONE)
         `uvm_info("COVERAGE", "       FUNCTIONAL COVERAGE SUMMARY          ", UVM_NONE)
         `uvm_info("COVERAGE", "============================================", UVM_NONE)
-        `uvm_info("COVERAGE",
-            $sformatf("cg_operations       : %.2f%%", cg_operations.get_coverage()),       UVM_NONE)
-        `uvm_info("COVERAGE",
-            $sformatf("cg_data_values      : %.2f%%", cg_data_values.get_coverage()),      UVM_NONE)
-        `uvm_info("COVERAGE",
-            $sformatf("cg_flag_transitions : %.2f%%", cg_flag_transitions.get_coverage()), UVM_NONE)
-        `uvm_info("COVERAGE",
-            $sformatf("TOTAL FUNCTIONAL COV: %.2f%%",
-                (cg_operations.get_coverage() +
-                 cg_data_values.get_coverage() +
-                 cg_flag_transitions.get_coverage()) / 3.0),
-            UVM_NONE)
+        `uvm_info("COVERAGE", $sformatf("cg_ops  (operations) : %.2f%%", ops_cov),   UVM_NONE)
+        `uvm_info("COVERAGE", $sformatf("cg_data (data vals)  : %.2f%%", data_cov),  UVM_NONE)
+        `uvm_info("COVERAGE", $sformatf("cg_flags(transitions): %.2f%%", flag_cov),  UVM_NONE)
+        `uvm_info("COVERAGE", $sformatf("TOTAL FUNCTIONAL COV : %.2f%%", total_cov), UVM_NONE)
         `uvm_info("COVERAGE", "============================================", UVM_NONE)
     endfunction
 
-endclass : fifo_coverage
+endclass
 
-`endif // FIFO_COVERAGE_SV
+`endif
