@@ -12,7 +12,7 @@ Thank you for your interest in contributing! Here's how you can help.
 
 ## Reporting Issues
 
-- Use the [GitHub Issues](https://github.com/KushalPitaliya/Spartan6-Synchronous-FIFO/issues) tab
+- Use the [GitHub Issues](https://github.com/k-pitaliya/Spartan6-Synchronous-FIFO/issues) tab
 - Describe the problem clearly with steps to reproduce
 - Include relevant logs or screenshots if applicable
 

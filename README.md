@@ -299,4 +299,4 @@ The FPGA demo allows interactive push-button write/read operations with the curr
 ## Author
 
 **Kushal Pitaliya** — Electronics & Communication Engineering, CHARUSAT  
-[LinkedIn](https://linkedin.com/in/kushalpitaliya06) | [GitHub](https://github.com/KushalPitaliya)
+[LinkedIn](https://linkedin.com/in/kushalpitaliya06) | [GitHub](https://github.com/k-pitaliya)
